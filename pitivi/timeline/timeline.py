@@ -1696,6 +1696,18 @@ class TimelineContainer(Gtk.Grid, Zoomable, Loggable):
         self.app.shortcuts.add("timeline.add-layer", ["<Primary>n"],
                                _("Add layer"))
 
+        self.seek_forward_clip_action = Gio.SimpleAction.new("seek-forward-clip", None)
+        self.seek_forward_clip_action.connect("activate", self._seek_forward_clip_cb)
+        group.add_action(self.seek_forward_clip_action)
+        self.app.shortcuts.add("timeline.seek-forward-clip", ["<Primary>Right"],
+                               _("Seeks to the first clip edge at the right of the playhead."))
+
+        self.seek_backward_clip_action = Gio.SimpleAction.new("seek-backward-clip", None)
+        self.seek_backward_clip_action.connect("activate", self._seek_backward_clip_cb)
+        group.add_action(self.seek_backward_clip_action)
+        self.app.shortcuts.add("timeline.seek-backward-clip", ["<Primary>Left"],
+                               _("Seeks to the first clip edge at the left of the playhead."))
+
         if in_devel():
             self.gapless_action = Gio.SimpleAction.new("toggle-gapless-mode", None)
             self.gapless_action.connect("activate", self._gaplessmode_toggled_cb)
@@ -1912,6 +1924,63 @@ class TimelineContainer(Gtk.Grid, Zoomable, Loggable):
                     toplevel=True):
             priority = len(self.ges_timeline.get_layers())
             self.timeline.create_layer(priority)
+
+    def first_clip_edge(self, before=None, after=None):
+        assert (after is not None) != (before is not None)
+
+        if after is not None:
+            start = after
+            end = self.ges_timeline.props.duration
+            point = end
+        else:
+            start = 0
+            end = before
+            point = start
+
+        if start >= end:
+            return None
+
+        for layer in self.ges_timeline.layers:
+            clips = layer.get_clips_in_interval(start, end)
+            if clips != []:
+                if after is not None:
+                    clip = clips[0]
+                    clip_end = clip.start + clip.duration
+                    if start < clip.start and (point == end or clip.start < point):
+                        point = clip.start
+                    elif len(clips) >= 2 and clips[1].start < clip_end and start < clips[1].start and (point == end or clip.start < point):
+                        point = clips[1].start
+                    elif end > clip_end and (point == end or clip_end < point):
+                        point = clip_end
+                else:
+                    clip = clips[-1]
+                    clip_end = clip.start + clip.duration
+                    if end > clip_end and (point == start or clip.start > point):
+                        point = clip_end
+                    elif len(clips) >= 2 and clips[-2].start + clips[-2].duration > clip.start and end > clips[-2].start + clips[-2].duration and (point == start or clip[-2].start + clip[-2].duration > point):
+                        point = clips[-2].start + clips[-2].duration
+                    elif start + 1 < clip.start and (point == start or clip_end > point):
+                        point = clip.start
+
+        return point
+
+    def _seek_forward_clip_cb(self, unused_action, unused_parameter):
+        """Seeks to the first clip edge at the right of the playhead."""
+        position = self.first_clip_edge(after=self._project.pipeline.getPosition())
+        if position is None:
+            return
+
+        self._project.pipeline.simple_seek(position)
+        self.timeline.scrollToPlayhead(align=Gtk.Align.CENTER, when_not_in_view=True)
+
+    def _seek_backward_clip_cb(self, unused_action, unused_parameter):
+        """Seeks to the first clip edge at the left of the playhead."""
+        position = self.first_clip_edge(before=self._project.pipeline.getPosition())
+        if position is None:
+            return
+
+        self._project.pipeline.simple_seek(position)
+        self.timeline.scrollToPlayhead(align=Gtk.Align.CENTER, when_not_in_view=True)
 
     def _alignSelectedCb(self, unused_action, unused_parameter):
         if not self.ges_timeline:
