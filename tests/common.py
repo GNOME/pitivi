@@ -38,6 +38,8 @@ from gi.repository import Gtk
 
 from pitivi.application import Pitivi
 from pitivi.clipproperties import ClipProperties
+from pitivi.clipproperties import SpeedProperties
+from pitivi.clipproperties import TransformationProperties
 from pitivi.editorstate import EditorState
 from pitivi.project import ProjectManager
 from pitivi.settings import GlobalSettings
@@ -196,13 +198,23 @@ def setup_project_with_clips(func, assets_names=None):
     def wrapper(self):
         with cloned_sample(*list(assets_names)):
             self.app = create_pitivi()
-            self.project = self.app.project_manager.new_blank_project()
-            self.timeline = self.project.ges_timeline
-            self.layer = self.timeline.append_layer()
+
+            self.timeline_container = TimelineContainer(self.app, editor_state=self.app.gui.editor.editor_state)
+
+            def loaded_cb(unused_pm, project):
+                self.timeline_container.set_project(project)
+                self.project = project
+                self.timeline = project.ges_timeline
+                layers = self.timeline.get_layers()
+                if layers:
+                    self.layer = layers[0]
+                else:
+                    self.layer = self.timeline.append_layer()
+
+            self.app.project_manager.connect("new-project-loaded", loaded_cb)
+            self.app.project_manager.new_blank_project()
             self.action_log = self.app.action_log
             project = self.app.project_manager.current_project
-            self.timeline_container = TimelineContainer(self.app, editor_state=self.app.gui.editor.editor_state)
-            self.timeline_container.set_project(project)
 
             timeline = self.timeline_container.timeline
             timeline.app.project_manager.current_project = project
@@ -210,7 +222,7 @@ def setup_project_with_clips(func, assets_names=None):
             uris = collections.deque([get_sample_uri(fname) for fname in assets_names])
             mainloop = create_main_loop()
 
-            def loaded_cb(project, timeline):
+            def project_loaded_cb(project, timeline):
                 project.add_uris([uris.popleft()])
 
             def progress_cb(project, progress, estimated_time):
@@ -220,11 +232,11 @@ def setup_project_with_clips(func, assets_names=None):
                     else:
                         mainloop.quit()
 
-            project.connect_after("loaded", loaded_cb)
+            project.connect_after("loaded", project_loaded_cb)
             project.connect_after("asset-loading-progress", progress_cb)
             mainloop.run()
 
-            project.disconnect_by_func(loaded_cb)
+            project.disconnect_by_func(project_loaded_cb)
             project.disconnect_by_func(progress_cb)
 
             assets = project.list_assets(GES.UriClip)
@@ -285,6 +297,23 @@ def setup_clipproperties(func):
 
         del self.transformation_box
         del self.clipproperties
+
+    return wrapped
+
+
+def setup_clip_speed_control_box(func):
+    def wrapped(self):
+        timeline_container = getattr(self, "timeline_container", create_timeline_container())
+        app = timeline_container.app
+        speed_controller = SpeedProperties(app)
+        speed_controller._new_project_loaded_cb(app, self.timeline_container._project)
+
+        # Inject useful vars into the test scope
+        func.__globals__['speed_controller'] = speed_controller
+        func.__globals__['timeline_container'] = timeline_container
+        func.__globals__['app'] = app
+
+        func(self)
 
     return wrapped
 

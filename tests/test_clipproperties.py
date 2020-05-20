@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
 """Tests for the pitivi.clipproperties module."""
-# pylint: disable=protected-access,no-self-use,import-outside-toplevel,no-member
+# pylint: disable=protected-access,no-self-use,import-outside-toplevel,no-member,undefined-variable
+import tempfile
 from unittest import mock
 
 from gi.repository import GES
+from gi.repository import Gst
+from gi.repository import Gtk
 
 from tests import common
 
@@ -395,3 +398,147 @@ class ClipPropertiesTest(common.TestCase):
 
         self.timeline_container.timeline.selection.select(clips)
         self.assertEqual(len(self.action_log.undo_stacks), 1)
+
+
+class SpeedPropertiesTest(common.TestCase):
+    """Tests for the TransformationProperties widget."""
+
+    def assert_applied_rate(self, speed_controller, rate, expected_duration):
+        self.assertEqual(len(speed_controller._time_effects), 2)
+        self.assertEqual(speed_controller.props.rate, rate)
+        self.assertEqual(speed_controller._clip.props.duration, expected_duration)
+        for effect, propname in speed_controller._time_effects.values():
+            self.assertTrue(propname in ["rate", "tempo"], propname)
+            self.assertEqual(effect.get_child_property(propname).value, rate)
+
+        self.assertEqual(speed_controller._speed_setter.get_widget_value(), rate)
+
+    @common.setup_project_with_clips
+    @common.setup_clip_speed_control_box
+    def test_clip_speed(self):
+        clip, = self.layer.get_clips()
+
+        self.project.ges_timeline.props.snapping_distance = Gst.SECOND
+        self.assertEqual(speed_controller._sources, {})
+        self.assertEqual(speed_controller._time_effects, {})
+
+        self.timeline_container.timeline.selection.select([clip])
+
+        self.assertEqual(len(speed_controller._sources), 2, speed_controller._sources)
+        self.assertEqual(speed_controller._time_effects, {})
+
+        clip.props.duration = Gst.SECOND
+        self.assertEqual(speed_controller._clip.props.duration, Gst.SECOND)
+
+        speed_controller._speed_setter.set_widget_value(2.0)
+        self.assert_applied_rate(speed_controller, 2.0, Gst.SECOND / 2)
+
+        speed_controller._speed_setter.set_widget_value(0.5)
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND * 2)
+
+        self.action_log.undo()
+        self.assert_applied_rate(speed_controller, 2.0, Gst.SECOND / 2)
+
+        self.action_log.undo()
+        self.assert_applied_rate(speed_controller, 1.0, Gst.SECOND)
+
+        self.action_log.redo()
+        self.assert_applied_rate(speed_controller, 2.0, Gst.SECOND / 2)
+
+        self.action_log.redo()
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND * 2)
+
+        self.timeline_container.timeline.selection.select([])
+        self.assertEqual(speed_controller._sources, {})
+        self.assertEqual(speed_controller._time_effects, {})
+
+        self.timeline_container.timeline.selection.select([clip])
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND * 2)
+
+        self.action_log.undo()
+        self.assert_applied_rate(speed_controller, 2.0, Gst.SECOND / 2)
+
+        self.timeline_container.timeline.selection.select([])
+        self.assertEqual(speed_controller._sources, {})
+        self.assertEqual(speed_controller._time_effects, {})
+
+        self.action_log.undo()
+        self.assertEqual(clip.get_child_property("GstVideoRate::rate").value, 1.0)
+        self.assertEqual(clip.get_child_property("tempo").value, 1.0)
+
+        self.action_log.redo()
+        self.assertEqual(clip.get_child_property("GstVideoRate::rate").value, 2.0)
+        self.assertEqual(clip.get_child_property("tempo").value, 2.0)
+
+        self.action_log.redo()
+        self.assertEqual(clip.get_child_property("GstVideoRate::rate").value, 0.5)
+        self.assertEqual(clip.get_child_property("tempo").value, 0.5)
+
+        self.timeline_container.timeline.selection.select([clip])
+        self.project.pipeline.get_position = mock.Mock(return_value=Gst.SECOND)
+        self.timeline_container.split_action.emit("activate", None)
+
+        clip1, clip2 = self.layer.get_clips()
+        self.assertEqual(clip1.props.start, 0)
+        self.assertEqual(clip1.props.duration, Gst.SECOND)
+        self.assertEqual(clip2.props.start, Gst.SECOND)
+        self.assertEqual(clip2.props.duration, Gst.SECOND)
+        self.assertEqual(self.project.ges_timeline.props.snapping_distance, Gst.SECOND)
+
+        # 0.1 would lead to clip1 totally overlapping clip2, ensure it is a noop
+        speed_controller._speed_setter.set_widget_value(0.1)
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND)
+        self.assertEqual(self.project.ges_timeline.props.snapping_distance, Gst.SECOND)
+
+        self.action_log.undo()
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND * 2)
+
+        # Undoing should undo the split
+        clip1, = self.layer.get_clips()
+
+        # redo the split
+        self.action_log.redo()
+        clip1, clip2 = self.layer.get_clips()
+        self.assertEqual(speed_controller._clip, clip1)
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND)
+        self.assertEqual(self.project.ges_timeline.props.snapping_distance, Gst.SECOND)
+
+        speed_controller._speed_setter.set_widget_value(float(1.0))
+        self.assert_applied_rate(speed_controller, 1.0, Gst.SECOND / 2)
+
+        speed_controller._speed_setter.set_widget_value(float(0.5))
+        self.assert_applied_rate(speed_controller, 0.5, Gst.SECOND)
+
+        speed_controller._new_project_loaded_cb(self.app, None)
+        self.assertEqual(speed_controller._sources, {})
+        self.assertEqual(speed_controller._time_effects, {})
+
+        return speed_controller
+
+    @common.setup_project_with_clips
+    @common.setup_clip_speed_control_box
+    def test_load_project_clip_speed(self):
+        clip, = self.layer.get_clips()
+        clip.props.duration = Gst.SECOND
+
+        self.timeline_container.timeline.selection.select([clip])
+        speed_controller._speed_setter.set_widget_value(0.5)
+        self.assert_applied_rate(speed_controller, 0.5, 2 * Gst.SECOND)
+
+        with tempfile.NamedTemporaryFile() as temp_file:
+            uri = Gst.filename_to_uri(temp_file.name)
+            pm = self.app.project_manager
+            self.assertTrue(pm.save_project(uri=uri, backup=False))
+
+            mainloop = common.create_main_loop()
+
+            pm.connect("new-project-loaded", lambda *args: mainloop.quit())
+            pm.connect("closing-project", lambda *args: True)
+            self.assertTrue(pm.close_running_project())
+            pm.load_project(uri)
+            mainloop.run()
+
+        self.assertTrue(self.layer.get_clips()[0] != clip, "%s == %s" % (clip, clip))
+        clip, = self.layer.get_clips()
+        self.timeline_container.timeline.selection.select([clip])
+        self.assert_applied_rate(speed_controller, 0.5, 2 * Gst.SECOND)

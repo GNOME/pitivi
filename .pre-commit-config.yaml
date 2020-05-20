@@ -38,7 +38,8 @@ repos:
         args:
           # http://flake8.pycqa.org/en/latest/user/error-codes.html
           # https://pycodestyle.readthedocs.io/en/latest/intro.html#error-codes
-          - --ignore=E402,E501,E722,F401,F841,W504
+          # F821 is already catched by pylint and we can diable the check more granuarly there.
+          - --ignore=E402,E501,E722,F401,F841,W504,F821
         exclude: >
           (?x)^(
             pitivi/utils/extract.py|
@@ -72,3 +73,8 @@ repos:
         args:
           - '--server'
           - 'https://gitlab.gnome.org'
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.800'
+    hooks:
+      - id: mypy
+        files: '.*pitivi/clipproperties.py$'
