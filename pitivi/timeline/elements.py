@@ -606,6 +606,7 @@ class TimelineElement(Gtk.Layout, Zoomable, Loggable):
         Zoomable.__init__(self)
         Loggable.__init__(self)
 
+        self.props.no_show_all = True
         self.set_name(element.get_name())
 
         self.timeline = timeline
@@ -613,13 +614,16 @@ class TimelineElement(Gtk.Layout, Zoomable, Loggable):
         self._ges_elem.selected = Selected()
         self._ges_elem.selected.connect(
             "selected-changed", self.__selected_changed_cb)
+        self._ges_elem.selected.connect(
+            "notify::track", self.__visible_changed_cb)
+        self._ges_elem.connect("notify::active",
+                               self.__visible_changed_cb)
 
         self.__width = 0
         self.__height = 0
 
         # Needed for effect's keyframe toggling
         self._ges_elem.ui_element = self
-
         self.props.vexpand = True
 
         self.__previewer = self._get_previewer()
@@ -632,7 +636,7 @@ class TimelineElement(Gtk.Layout, Zoomable, Loggable):
 
         self.keyframe_curve = None
         self.__controlled_property = None
-        self.show_all()
+        self.reset_visibility()
 
         # We set up the default mixing property right here, if a binding was
         # already set (when loading a project), it will be added later
@@ -647,6 +651,17 @@ class TimelineElement(Gtk.Layout, Zoomable, Loggable):
     def release(self):
         if self.__previewer:
             self.__previewer.release()
+
+    def reset_visibility(self):
+        if self._ges_elem.get_track() and self._ges_elem.props.active:
+            self.set_visible(True)
+            for child in self.get_children():
+                child.show_all()
+        else:
+            self.set_visible(False)
+
+    def __visible_changed_cb(self, unused_track_element, unused_pspec):
+        self.reset_visibility()
 
     # Public API
     def set_size(self, width, height):
@@ -1244,6 +1259,7 @@ class Clip(Gtk.EventBox, Zoomable, Loggable):
             self.set_size_request(width, height)
 
             elements = self._elements_container.get_children()
+            elements = [elem for elem in elements if elem.is_visible()]
             for child in elements:
                 child.set_size(width, height / len(elements))
 
@@ -1433,12 +1449,12 @@ class UriClip(SourceClip):
             self.audio_widget = AudioUriSource(ges_timeline_element, self.timeline)
             ges_timeline_element.ui = self.audio_widget
             self._elements_container.pack_end(self.audio_widget, True, False, 0)
-            self.audio_widget.set_visible(True)
+            self.audio_widget.reset_visibility()
         elif ges_timeline_element.get_track_type() == GES.TrackType.VIDEO:
             self.video_widget = VideoUriSource(ges_timeline_element, self.timeline)
             ges_timeline_element.ui = self.video_widget
             self._elements_container.pack_start(self.video_widget, True, False, 0)
-            self.video_widget.set_visible(True)
+            self.video_widget.reset_visibility()
 
 
 class TestClip(SourceClip):
@@ -1458,7 +1474,7 @@ class TestClip(SourceClip):
             self.video_widget = VideoTestSource(ges_timeline_element, self.timeline)
             ges_timeline_element.ui = self.video_widget
             self._elements_container.pack_start(self.video_widget, True, False, 0)
-            self.video_widget.set_visible(True)
+            self.video_widget.reset_visibility()
 
 
 class TitleClip(SourceClip):
@@ -1478,7 +1494,6 @@ class TitleClip(SourceClip):
             self.video_widget = TitleSource(ges_timeline_element, self.timeline)
             ges_timeline_element.ui = self.video_widget
             self._elements_container.pack_start(self.video_widget, True, False, 0)
-            self.video_widget.set_visible(True)
 
 
 class TransitionClip(Clip):
