@@ -115,7 +115,7 @@ class TitleProperties(Gtk.Expander, Loggable):
         self.show_all()
 
     def _set_child_property(self, name, value):
-        with self.app.action_log.started("Title change property",
+        with self.app.action_log.started("Title change property %s" % name,
                                          toplevel=True):
             self._setting_props = True
             try:
