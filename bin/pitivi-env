@@ -59,6 +59,7 @@ then
     alias pitivi="ptvenv $PITIVI_REPO_DIR/bin/pitivi"
 
     echo "Installing our pre-commit git hook, for doing clean commits..."
+    mkdir -p .git/hooks
     rm -f .git/hooks/pre-commit
     ln -s ../../pre-commit.hook .git/hooks/pre-commit
 
