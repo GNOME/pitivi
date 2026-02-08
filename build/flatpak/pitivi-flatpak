@@ -180,6 +180,20 @@ def check_flatpak(verbose=True):
     return True
 
 
+def get_freedesktop_branch(sdk_branch):
+    """Get the freedesktop branch on which the current Gnome SDK is based."""
+    result = subprocess.run(
+        ["flatpak", "info", "--show-metadata", f"org.gnome.Sdk//{sdk_branch}"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    config = configparser.ConfigParser()
+    config.read_string(result.stdout)
+    section = "Extension org.freedesktop.Sdk.Extension"
+    return config[section].get("version")
+
+
 class FlatpakObject:
 
     def __init__(self, user):
@@ -211,12 +225,10 @@ class FlatpakPackages(FlatpakObject):
 
         self.repos = repos
 
-        self.runtimes = self.__detect_runtimes()
-        self.apps = self.__detect_apps()
-        self.packages = self.runtimes + self.apps
+        self.runtimes = list(self.__detect_packages("--runtime"))
+        self.apps = list(self.__detect_packages("--app"))
 
     def __detect_packages(self, *args):
-        packs = []
         if FLATPAK_VERSION["flatpak"] < (1, 1, 2):
             out = self.flatpak("list", "-d", *args)
             package_defs = [line for line in out.split("\n") if line]
@@ -228,7 +240,7 @@ class FlatpakPackages(FlatpakObject):
                 repo_name = splited_packaged_def[1]
                 repo = self.repos.repos.get(repo_name)
 
-                packs.append(FlatpakPackage(name, branch, repo, arch))
+                yield FlatpakPackage(name, branch, repo, arch)
         else:
             out = self.flatpak("list", "--columns=application,arch,branch,origin", *args)
             package_defs = [line for line in out.split("\n") if line]
@@ -238,18 +250,12 @@ class FlatpakPackages(FlatpakObject):
                 # If installed from a file, the package is in no repo
                 repo = self.repos.repos.get(origin)
 
-                packs.append(FlatpakPackage(name, branch, repo, arch))
-
-        return packs
-
-    def __detect_runtimes(self):
-        return self.__detect_packages("--runtime")
-
-    def __detect_apps(self):
-        return self.__detect_packages()
+                yield FlatpakPackage(name, branch, repo, arch)
 
     def __iter__(self):
-        for package in self.packages:
+        for package in self.runtimes:
+            yield package
+        for package in self.apps:
             yield package
 
 
@@ -348,6 +354,7 @@ class FlatpakRepos(FlatpakObject):
 
 
 class FlatpakRepo(FlatpakObject):
+    """A flatpak remote, such as Flathub."""
 
     def __init__(self, name, url, desc=None, user=True, repos=None):
         FlatpakObject.__init__(self, user=user)
@@ -360,7 +367,7 @@ class FlatpakRepo(FlatpakObject):
 
 
 class FlatpakPackage(FlatpakObject):
-    """A flatpak app."""
+    """A flatpak runtime or app."""
 
     def __init__(self, name, branch, repo, arch, user=True):
         FlatpakObject.__init__(self, user=user)
@@ -378,6 +385,7 @@ class FlatpakPackage(FlatpakObject):
             # Bundle installed from file
             return True
 
+        # TODO: Why do we need this if?
         if len(self.name.split(".")) <= 3:
             self.repo.repos.update()
             for package in self.repo.repos.packages:
@@ -422,14 +430,11 @@ class PitiviFlatpak:
     def __init__(self):
         self.name = "Pitivi"
         self.sdk_repo = None
-        self.runtime = None
-        self.locale = None
-        self.sdk = None
 
         self.packs = []
         self.init = False
         self.update = False
-        self.json = None
+        self.manifest_path = None
         self.args = []
         self.build = False
         self.scriptdir = os.path.abspath(os.path.dirname(__file__))
@@ -470,6 +475,9 @@ class PitiviFlatpak:
         repos = FlatpakRepos()
         self.sdk_repo = repos.add("flathub",
                                   "https://dl.flathub.org/repo/flathub.flatpakrepo")
+        if not self.sdk_repo:
+            Console.error("Failed to register the 'flathub' flatpak repo")
+            sys.exit(1)
 
         manifest_path = os.path.join(self.scriptdir, MANIFEST_NAME)
         manifest = load_manifest(manifest_path)
@@ -477,13 +485,18 @@ class PitiviFlatpak:
             return
 
         sdk_branch = manifest["runtime-version"]
-        self.runtime = FlatpakPackage(
-            "org.gnome.Platform", sdk_branch, self.sdk_repo, ARCH)
-        self.locale = FlatpakPackage(
-            "org.gnome.Platform.Locale", sdk_branch, self.sdk_repo, ARCH)
-        self.sdk = FlatpakPackage(
-            "org.gnome.Sdk", sdk_branch, self.sdk_repo, ARCH)
-        self.packs = [self.runtime, self.locale, self.sdk]
+        freedesktop_branch = get_freedesktop_branch(sdk_branch)
+        self.packs = [
+        FlatpakPackage(
+            "org.gnome.Platform", sdk_branch, self.sdk_repo, ARCH),
+        FlatpakPackage(
+            "org.gnome.Platform.Locale", sdk_branch, self.sdk_repo, ARCH),
+        FlatpakPackage(
+            "org.gnome.Sdk", sdk_branch, self.sdk_repo, ARCH),
+        FlatpakPackage(
+            "org.freedesktop.Sdk.Extension.rust-stable", freedesktop_branch, self.sdk_repo, ARCH),
+        FlatpakPackage(
+            "org.freedesktop.Sdk.Extension.llvm21", freedesktop_branch, self.sdk_repo, ARCH)]
 
         if self.coredumpgdb is None and "--coredumpgdb" in sys.argv or "-gdb" in sys.argv:
             self.coredumpgdb = ""
@@ -491,7 +504,7 @@ class PitiviFlatpak:
         if self.bundle:
             self.build = True
 
-        self.json = os.path.join(self.scriptdir, self.build_name + ".json")
+        self.manifest_path = os.path.join(self.scriptdir, self.build_name + ".json")
 
         if not self.args:
             self.args.append(os.path.join(self.scriptdir, "enter-env"))
@@ -571,16 +584,15 @@ class PitiviFlatpak:
 
     def setup_sandbox(self):
         """Creates and updates the sandbox."""
-        Console.message("Building Pitivi %s and dependencies in %s",
-                        self.branch, self.prefix)
-
         manifest_path = os.path.join(self.scriptdir, MANIFEST_NAME)
-        expand_manifest(manifest_path, self.json,
+        Console.message("Preparing flatpak manifest: %s", self.manifest_path)
+        expand_manifest(manifest_path, self.manifest_path,
                         self.local_repos_path, self.gst_version,
                         self.branch)
 
+        Console.message("Building sandbox: %s", self.prefix)
         builder_args = ["flatpak-builder", "--force-clean",
-                        "--ccache", self.prefix, self.json]
+                        "--ccache", self.prefix, self.manifest_path]
         if not self.bundle:
             builder_args.append("--build-only")
 
