@@ -59,6 +59,34 @@ $ git commit -a -m "build: Update deps with flatpak-external-data-checker"
 
 Other deps have to be checked and updated manually.
 
+## Update gst-plugins-rs
+
+Follow the [official integration steps](https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/README.md?ref_type=heads#flatpak-integration). 
+
+To generate the list of dependencies, prepare a Python venv:
+
+```
+$ python3 -m venv /tmp/venv
+$ /tmp/venv/bin/pip install aiohttp tomlkit
+```
+
+.. and use it to run flatpak-cargo-generator, as per the official integration steps:
+
+```
+$ cd /tmp
+$ wget --user-agent="Firefox" https://crates.io/api/v1/crates/gst-plugin-gtk4/0.15.2/download -O crate.tar.gz
+$ tar xzvf crate.tar.gz
+$ /tmp/venv/bin/python3 /.../flatpak-builder-tools/cargo/flatpak-cargo-generator.py gst-plugin-gtk4-0.15.2/Cargo.lock -o gst-plugin-gtk4-sources.json
+$ mv gst-plugin-gtk4-sources.json ~/dev/pitivi/pitivi/build/flatpak/
+```
+
+Finally, check what optimizations you can enable. For example for Gtk version 4.14.4 we can enable the `gtk_v4_14` feature in the `cargo cinstall --features=...` line. To get the version of the Gtk library in the Sdk run:
+
+```
+(ptv-flatpak) $ ptvenv python3 -c "from gi.repository import Gtk; print('{}.{}.{}'.format(Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION))"
+4.14.4
+```
+
 ## Check the Python version
 
 Check the Python version in the sandbox. For example, last time it was:

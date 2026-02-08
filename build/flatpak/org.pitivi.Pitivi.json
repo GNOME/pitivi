@@ -2,7 +2,7 @@
     "app-id": "org.pitivi.Pitivi",
     "branch": "master",
     "runtime": "org.gnome.Platform",
-    "runtime-version": "47",
+    "runtime-version": "50",
     "command": "pitivi",
     "finish-args": [
         "--socket=fallback-x11",
@@ -16,11 +16,25 @@
     ],
     "sdk": "org.gnome.Sdk",
     "copy-icon": true,
+    "//": "https://github.com/flathub/org.freedesktop.Sdk.Extension.rust-stable/blob/branch/25.08/README.md#with-clang",
+    "sdk-extensions": [
+        "org.freedesktop.Sdk.Extension.rust-stable",
+        "org.freedesktop.Sdk.Extension.llvm21"
+    ],
     "build-options": {
+        "build-args": [
+            "--share=network"
+        ],
+        "append-path": "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm21/bin",
         "env": {
-            "PYTHON": "python3",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold",
+            "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER": "clang",
+            "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold",
+            "FREI0R_PATH": "/app/lib/frei0r-1/",
             "GST_PLUGIN_SYSTEM_PATH": "/app/lib/gstreamer-1.0/",
-            "FREI0R_PATH": "/app/lib/frei0r-1/"
+            "PYTHON": "python3",
+            "RUSTFLAGS": "-C link-arg=-fuse-ld=mold"
         },
         "strip": false,
         "no-debuginfo": true
@@ -28,22 +42,16 @@
     "modules": [
         "aarch64/python3-ipdb.json",
         "x86_64/python3-ipdb.json",
-
         "aarch64/python3-pre-commit.json",
         "x86_64/python3-pre-commit.json",
-
         "aarch64/python3-hotdoc.json",
         "x86_64/python3-hotdoc.json",
-
         "aarch64/python3-pylint.json",
         "x86_64/python3-pylint.json",
-
         "aarch64/python3-matplotlib.json",
         "x86_64/python3-matplotlib.json",
-
         "aarch64/python3-librosa.json",
         "x86_64/python3-librosa.json",
-
         "libcanberra/libcanberra.json",
         {
             "name": "gsound",
@@ -92,7 +100,6 @@
             "sources": [
                 {
                     "type": "archive",
-                    "//": "Last updated in 2012: https://sourceforge.net/projects/gmerlin/files/gavl/",
                     "//": "If you need to touch this again, see how an unreleased snapshot is used here: https://github.com/flathub/org.kde.kdenlive/blob/master/org.kde.kdenlive.json",
                     "url": "https://downloads.sourceforge.net/project/gmerlin/gavl/1.4.0/gavl-1.4.0.tar.gz",
                     "mirror-urls": [
@@ -217,8 +224,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://github.com/dyne/frei0r/archive/v2.3.3.tar.gz",
-                    "sha256": "aeeefe3a9b44761b2cf110017d2b1dfa2ceeb873da96d283ba5157380c5d0ce5",
+                    "url": "https://github.com/dyne/frei0r/archive/v2.5.1.tar.gz",
+                    "sha256": "318ec4a3042c94a00a58fccdc1eb0d911f36a22beb3504d27aefcca4598f40b0",
                     "x-checker-data": {
                         "type": "anitya",
                         "project-id": 10670,
@@ -234,16 +241,12 @@
                 {
                     "type": "git",
                     "url": "https://codeberg.org/soundtouch/soundtouch",
-                    "tag": "2.3.3",
-                    "commit": "e83424d5928ab8513d2d082779c275765dee31b9",
+                    "tag": "2.4.1",
+                    "commit": "0047e0b1ecfceb041348579119bf79b73a322a3a",
                     "x-checker-data": {
                         "type": "git",
                         "tag-pattern": "^([\\d.]+)$"
                     }
-                },
-                {
-                    "type": "patch",
-                    "path": "disable-fast-math-as-it-affects-the-entire-process.patch"
                 }
             ]
         },
@@ -290,7 +293,6 @@
                 "--enable-shared",
                 "--enable-pic",
                 "--disable-avdevice",
-                "--disable-postproc",
                 "--disable-swscale",
                 "--disable-programs",
                 "--disable-ffplay",
@@ -329,8 +331,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n7.0.2.tar.gz",
-                    "sha256": "5eb46d18d664a0ccadf7b0adee03bd3b7fa72893d667f36c69e202a807e6d533",
+                    "url": "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n8.0.1.tar.gz",
+                    "sha256": "679aa13a19415d5ddab91e580084e3ab20c963c8240001e5cbb955a97bdd81b1",
                     "x-checker-data": {
                         "type": "html",
                         "url": "https://git.ffmpeg.org/gitweb/ffmpeg.git/tags",
@@ -397,7 +399,7 @@
                 "-Dgpl=enabled",
                 "-Dgst-devtools:doc=disabled",
                 "-Dgst-editing-services:doc=disabled",
-                "-Dgst-editing-services:pygi-overrides-dir=/app/lib/python3.12/site-packages/gi/overrides/",
+                "-Dgst-editing-services:pygi-overrides-dir=/app/lib/python3.13/site-packages/gi/overrides/",
                 "-Dgst-libav:doc=disabled",
                 "-Dgst-plugins-bad:aom=disabled",
                 "-Dgst-plugins-bad:doc=disabled",
@@ -412,7 +414,8 @@
                 "-Dgst-plugins-good:dv=enabled",
                 "-Dgst-plugins-ugly:doc=disabled",
                 "-Dgst-plugins-ugly:x264=enabled",
-                "-Dgst-python:pygi-overrides-dir=/app/lib/python3.12/site-packages/gi/overrides/",
+                "-Dgst-python:pygi-overrides-dir=/app/lib/python3.13/site-packages/gi/overrides/",
+                "-Dgstreamer-vaapi:doc=disabled",
                 "-Dintrospection=enabled",
                 "-Dlibav=enabled",
                 "-Dpython=enabled",
@@ -444,6 +447,28 @@
                         "stable-only": true
                     }
                 }
+            ]
+        },
+        {
+            "//": "--libdir can be removed when https://github.com/lu-zero/cargo-c/pull/386 is merged and released",
+            "name": "gst-plugins-rs",
+            "buildsystem": "simple",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://crates.io/api/v1/crates/gst-plugin-gtk4/0.15.2/download",
+                    "dest-filename": "gst-plugin-gtk4-0.15.2.tar.gz",
+                    "sha256": "9d22a27972c25e706b428e78356458446314c70eb31aef07d4a32b843a6dea94"
+                },
+                "gst-plugin-gtk4-sources.json"
+            ],
+            "build-options": {
+                "env": {
+                    "CARGO_HOME": "/run/build/gst-plugins-rs/cargo"
+                }
+            },
+            "build-commands": [
+                "cargo cinstall --offline --release --features=wayland,x11glx,x11egl,dmabuf,gtk_v4_14 --library-type=cdylib --prefix=/app --libdir /app/lib"
             ]
         },
         {
