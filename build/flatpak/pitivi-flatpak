@@ -425,7 +425,7 @@ class FlatpakPackage(FlatpakObject):
                      comment="Running %s (%s)" % (self.name, self.branch))
 
 
-class PitiviFlatpak:
+class SandboxManager:
 
     def __init__(self):
         self.name = "Pitivi"
@@ -435,6 +435,7 @@ class PitiviFlatpak:
         self.init = False
         self.update = False
         self.manifest_path = None
+        self.offline = False
         self.args = []
         self.build = False
         self.scriptdir = os.path.abspath(os.path.dirname(__file__))
@@ -595,6 +596,8 @@ class PitiviFlatpak:
                         "--ccache", self.prefix, self.manifest_path]
         if not self.bundle:
             builder_args.append("--build-only")
+        if self.offline:
+            builder_args.append("--offline")
 
         try:
             subprocess.check_call(["flatpak-builder", "--version"])
@@ -706,7 +709,7 @@ class PitiviFlatpak:
 
 
 if __name__ == "__main__":
-    app_flatpak = PitiviFlatpak()
+    manager = SandboxManager()
 
     parser = argparse.ArgumentParser(prog="pitivi-flatpak")
 
@@ -720,6 +723,9 @@ if __name__ == "__main__":
     general.add_argument("-q", "--quiet", dest="quiet",
                          action="store_true",
                          help="Do not print anything")
+    general.add_argument("--offline", dest="offline",
+                         action="store_true",
+                         help="Work with whatever modules have already been downloaded")
     general.add_argument("args",
                          nargs=argparse.REMAINDER,
                          help="The command to run in the sandbox")
@@ -763,6 +769,6 @@ if __name__ == "__main__":
         help="Generate static deltas (check 'man flatpak-build-update-repo'"
         " for more information)")
 
-    parser.parse_args(namespace=app_flatpak)
-    app_flatpak.clean_args()
-    app_flatpak.run()
+    parser.parse_args(namespace=manager)
+    manager.clean_args()
+    manager.run()
