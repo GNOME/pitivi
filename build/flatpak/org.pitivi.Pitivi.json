@@ -44,8 +44,6 @@
         "x86_64/python3-ipdb.json",
         "aarch64/python3-pre-commit.json",
         "x86_64/python3-pre-commit.json",
-        "aarch64/python3-hotdoc.json",
-        "x86_64/python3-hotdoc.json",
         "aarch64/python3-pylint.json",
         "x86_64/python3-pylint.json",
         "aarch64/python3-matplotlib.json",

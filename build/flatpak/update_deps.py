@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Script to update dependencies for the flatpak build."""
+import json
 import os
 import platform
 import subprocess
 import sys
 from enum import Enum
+from pathlib import Path
 
 VENV_PATH = "/tmp/venv1"
 BUILDER_REPO_URL = "https://github.com/aleb/flatpak-builder-tools.git"
 REPO_CLONE_DIR = "flatpak-builder-tools"
 BUILD_DIR = "build/flatpak"
-SDK = "47"
 
 
 class Arch(Enum):
@@ -57,25 +58,25 @@ def clone_flatpak_builder_tools():
     return os.path.join(REPO_CLONE_DIR, "pip", "flatpak-pip-generator")
 
 
-def update_runtime_dependencies(venv_python, flatpak_pip_generator, arch):
+def update_runtime_dependencies(venv_python, flatpak_pip_generator, arch, sdk):
     """Update runtime dependencies."""
     print("Updating runtime dependencies...")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} librosa", cwd=f"{os.getcwd()}/{arch}")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} matplotlib", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} librosa", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} matplotlib", cwd=f"{os.getcwd()}/{arch}")
 
 
-def update_development_tools(venv_python, flatpak_pip_generator, arch):
+def update_development_tools(venv_python, flatpak_pip_generator, arch, sdk):
     """Update development tools."""
     print("Updating development tools...")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} wheezy.template nose setuptools_git setuptools_pep8 sphinx hotdoc", cwd=f"{os.getcwd()}/{arch}")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} ipdb", cwd=f"{os.getcwd()}/{arch}")
+    # run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} wheezy.template nose sphinx hotdoc", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} ipdb", cwd=f"{os.getcwd()}/{arch}")
 
 
-def update_pre_commit_framework(venv_python, flatpak_pip_generator, arch):
+def update_pre_commit_framework(venv_python, flatpak_pip_generator, arch, sdk):
     """Update the pre-commit framework."""
     print("Updating pre-commit framework...")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} pre-commit", cwd=f"{os.getcwd()}/{arch}")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk/{arch}/{SDK} setuptools-scm 'pylint<=2.13.5'", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} pre-commit", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} setuptools-scm 'pylint<=2.13.5'", cwd=f"{os.getcwd()}/{arch}")
 
 
 def get_system_arch():
@@ -97,15 +98,18 @@ def main():
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     arch = get_system_arch()
+    manifest = json.load(Path("org.pitivi.Pitivi.json").open())
+    sdk = manifest.get("runtime-version")
+
     setup_virtualenv()
     flatpak_pip_generator = clone_flatpak_builder_tools()
 
     # Set the path to the Python executable inside the virtual environment
     venv_python = VENV_PATH + "/bin/python3"
 
-    update_runtime_dependencies(venv_python, flatpak_pip_generator, arch)
-    update_development_tools(venv_python, flatpak_pip_generator, arch)
-    update_pre_commit_framework(venv_python, flatpak_pip_generator, arch)
+    update_runtime_dependencies(venv_python, flatpak_pip_generator, arch, sdk)
+    update_development_tools(venv_python, flatpak_pip_generator, arch, sdk)
+    update_pre_commit_framework(venv_python, flatpak_pip_generator, arch, sdk)
 
     print(f"WARNING: Dependencies updated ONLY for the current host architecture - {arch}")
     print("NOTE: You'll need to run this script on different hosts to update dependencies for their respective architectures")
