@@ -118,7 +118,7 @@ class TeedThumbnailBin(PreviewerBin):
     def __init__(self, bin_desc="videoconvert ! videoflip method=automatic ! tee name=t ! queue  "
                  "max-size-buffers=0 max-size-bytes=0 max-size-time=0  ! "
                  "videoconvert ! videorate ! videoscale method=lanczos ! "
-                 "capsfilter caps=video/x-raw,format=(string)RGBA,height=(int)%d,"
+                 "capsfilter caps=video/x-raw,format=(string)RGB,height=(int)%d,"
                  "pixel-aspect-ratio=(fraction)1/1,"
                  "framerate=2/1 ! gdkpixbufsink name=gdkpixbufsink "
                  "t. ! queue " % THUMB_HEIGHT):
@@ -630,7 +630,7 @@ class AssetPreviewer(Previewer, Loggable):
             "videorate ! "
             "videoflip method=automatic ! "
             "videoscale method=lanczos ! "
-            "capsfilter caps=video/x-raw,format=(string)RGBA,height=(int){height},"
+            "capsfilter caps=video/x-raw,format=(string)RGB,height=(int){height},"
             "pixel-aspect-ratio=(fraction)1/1,framerate={thumbs_per_second}/1 ! "
             "gdkpixbufsink name=gdkpixbufsink".format(
                 uri=self.uri,
