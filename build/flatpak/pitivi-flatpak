@@ -649,6 +649,7 @@ class SandboxManager:
         flatpak_command = ["flatpak",
                            "build",
                            "--device=dri",
+                           "--filesystem=host",
                            "--env=PITIVI_DEVELOPMENT=1",
                            "--env=PYTHONUSERBASE=/app/",
                            "--env=CC=ccache gcc",
