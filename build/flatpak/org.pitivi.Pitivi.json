@@ -107,11 +107,11 @@
                 },
                 {
                     "type": "patch",
-                    "path": "gavl/gavl-armel-ftbfs.patch"
+                    "path": "patches/gavl-ubuntu_armel_ftbfs.patch"
                 },
                 {
                     "type": "patch",
-                    "path": "gavl/gavl-implicit-declaration-of-memset.patch"
+                    "path": "patches/gavl-implicit-declaration-of-memset.patch"
                 },
                 {
                     "type": "shell",
