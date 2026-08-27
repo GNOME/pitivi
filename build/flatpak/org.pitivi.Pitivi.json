@@ -89,6 +89,15 @@
             "//": "Needed by frei0r",
             "name": "gavl",
             "rm-configure": true,
+            "build-options": {
+                "arch": {
+                    "x86_64": {
+                        "config-opts": [
+                            "--with-cpuflags=-msse -msse2"
+                        ]
+                    }
+                }
+            },
             "config-opts": [
                 "--without-doxygen",
                 "--disable-static",
@@ -131,12 +140,15 @@
         },
         {
             "name": "opencv",
-            "buildsystem": "cmake",
+            "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOPENCV_EXTRA_MODULES_PATH=../contrib/modules",
                 "-DOPENCV_GENERATE_PKGCONFIG=1",
+                "-DWITH_LAPACK=OFF",
+                "-DBUILD_PERF_TESTS=OFF",
+                "-DBUILD_TESTS=OFF",
                 "-DBUILD_opencv_alphamat=OFF",
                 "-DBUILD_opencv_aruco=OFF",
                 "-DBUILD_opencv_bgsegm=ON",
@@ -187,7 +199,6 @@
                 "-DBUILD_opencv_surface_matching=OFF",
                 "-DBUILD_opencv_text=OFF",
                 "-DBUILD_opencv_tracking=ON",
-                "-DBUILD_opencv_videoio=OFF",
                 "-DBUILD_opencv_videostab=OFF",
                 "-DBUILD_opencv_viz=OFF",
                 "-DBUILD_opencv_xfeatures2d=OFF",
@@ -201,14 +212,18 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://github.com/opencv/opencv/archive/refs/tags/3.4.19.tar.gz",
-                    "sha256": "9b913e74299ce4416a5c94000da577c592bf670fd53bad16220eb115a0821529"
+                    "url": "https://github.com/opencv/opencv/archive/4.8.0.tar.gz",
+                    "sha256": "cbf47ecc336d2bff36b0dcd7d6c179a9bb59e805136af6b9670ca944aef889bd"
                 },
                 {
                     "type": "archive",
-                    "url": "https://github.com/opencv/opencv_contrib/archive/3.4.19.tar.gz",
-                    "sha256": "4e7426f1d0f8dffafa5fe70b72ab33997d0055c7804d7d2760c7ff0a153efb38",
+                    "url": "https://github.com/opencv/opencv_contrib/archive/4.8.0.tar.gz",
+                    "sha256": "b4aef0f25a22edcd7305df830fa926ca304ea9db65de6ccd02f6cfa5f3357dbb",
                     "dest": "contrib"
+                },
+                {
+                    "type": "patch",
+                    "path": "patches/opencv-cmake.patch"
                 }
             ]
         },
@@ -217,7 +232,8 @@
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
-                "-DCMAKE_BUILD_TYPE=Release"
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
             ],
             "sources": [
                 {
@@ -268,7 +284,17 @@
         },
         {
             "name": "x265",
-            "buildsystem": "cmake",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+            ],
+            "build-options": {
+                "arch": {
+                    "aarch64": {
+                        "cxxflags": "-fPIC"
+                    }
+                }
+            },
             "subdir": "source",
             "sources": [
                 {
@@ -281,11 +307,18 @@
                         "version-pattern": "releasetag: ([\\d\\.-]*)$",
                         "url-template": "https://bitbucket.org/multicoreware/x265_git/downloads/x265_$version.tar.gz"
                     }
+                },
+                {
+                    "type": "patch",
+                    "path": "patches/x265-cmake.patch"
                 }
             ]
         },
         {
             "name": "ffmpeg",
+            "build-options": {
+                "cflags": "-fpermissive"
+            },
             "config-opts": [
                 "--disable-static",
                 "--enable-shared",
@@ -425,6 +458,21 @@
                     "url": "https://gitlab.freedesktop.org/gstreamer/gstreamer.git",
                     "branch": "main",
                     "disable-submodules": true
+                }
+            ]
+        },
+        {
+            "name": "pygobject",
+            "//": "This is necessary because the version in the runtime no longer support the libpeas that is needed for pitivi",
+            "buildsystem": "meson",
+            "config-opts": [
+                "-Dtests=false"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://download.gnome.org/sources/pygobject/3.50/pygobject-3.50.0.tar.xz",
+                    "sha256": "8d836e75b5a881d457ee1622cae4a32bcdba28a0ba562193adb3bbb472472212"
                 }
             ]
         },

@@ -17,7 +17,7 @@ index 67791f0..c1532ab 100644
 @@ -307,6 +307,11 @@ static gint window_get_desktop(GdkDisplay *d, GdkWindow *w) {
          guchar *data = NULL;
          gint ret = -1;
-
+ 
 +#ifdef GDK_IS_X11_DISPLAY
 +        if (!GDK_IS_X11_DISPLAY(d))
 +                return 0;
@@ -29,7 +29,7 @@ index 67791f0..c1532ab 100644
 @@ -335,6 +340,11 @@ static gint display_get_desktop(GdkDisplay *d) {
          guchar *data = NULL;
          gint ret = -1;
-
+ 
 +#ifdef GDK_IS_X11_DISPLAY
 +        if (!GDK_IS_X11_DISPLAY(d))
 +                return 0;
@@ -41,7 +41,7 @@ index 67791f0..c1532ab 100644
 @@ -365,6 +375,11 @@ static gboolean window_is_xembed(GdkDisplay *d, GdkWindow *w) {
          gboolean ret = FALSE;
          Atom xembed;
-
+ 
 +#ifdef GDK_IS_X11_DISPLAY
 +        if (!GDK_IS_X11_DISPLAY(d))
 +                return FALSE;
@@ -49,7 +49,7 @@ index 67791f0..c1532ab 100644
 +
          /* Gnome Panel applets are XEMBED windows. We need to make sure we
           * ignore them */
-
+ 
 diff --git a/src/canberra-gtk.c b/src/canberra-gtk.c
 index 34446f5..47285f8 100644
 --- a/src/canberra-gtk.c
@@ -57,7 +57,7 @@ index 34446f5..47285f8 100644
 @@ -185,6 +185,11 @@ static gint window_get_desktop(GdkDisplay *d, GdkWindow *w) {
          guchar *data = NULL;
          gint ret = -1;
-
+ 
 +#ifdef GDK_IS_X11_DISPLAY
 +        if (!GDK_IS_X11_DISPLAY(d))
 +                return 0;
@@ -67,7 +67,7 @@ index 34446f5..47285f8 100644
                                 gdk_x11_get_xatom_by_name_for_display(d, "_NET_WM_DESKTOP"),
                                 0, G_MAXLONG, False, XA_CARDINAL, &type_return,
 @@ -254,18 +259,28 @@ int ca_gtk_proplist_set_for_widget(ca_proplist *p, GtkWidget *widget) {
-
+ 
          if (gtk_widget_get_realized(GTK_WIDGET(w))) {
                  GdkWindow *dw = NULL;
 +#ifdef GDK_IS_X11_DISPLAY
@@ -75,7 +75,7 @@ index 34446f5..47285f8 100644
 +#endif
                  GdkDisplay *display = NULL;
                  gint x = -1, y = -1, width = -1, height = -1, screen_width = -1, screen_height = -1;
-
+ 
 -                if ((dw = gtk_widget_get_window(GTK_WIDGET(w))))
 -                        if ((ret = ca_proplist_setf(p, CA_PROP_WINDOW_X11_XID, "%lu", (unsigned long) GDK_WINDOW_XID(dw))) < 0)
 -                                return ret;
@@ -87,7 +87,7 @@ index 34446f5..47285f8 100644
 +                        }
 +#endif
 +                }
-
+ 
                  if ((display = gtk_widget_get_display(GTK_WIDGET(w)))) {
 -                        if ((t = gdk_display_get_name(display)))
 +#ifdef GDK_IS_X11_DISPLAY
@@ -96,17 +96,17 @@ index 34446f5..47285f8 100644
                                          return ret;
 +                        }
 +#endif
-
+ 
                          if (dw)  {
                                  gint desktop = window_get_desktop(display, dw);
 @@ -276,7 +291,8 @@ int ca_gtk_proplist_set_for_widget(ca_proplist *p, GtkWidget *widget) {
                          }
                  }
-
+ 
 -                if ((screen = gtk_widget_get_screen(GTK_WIDGET(w)))) {
 +#ifdef GDK_IS_X11_DISPLAY
 +                if (GDK_IS_X11_DISPLAY(display) && (screen = gtk_widget_get_screen(GTK_WIDGET(w)))) {
-
+ 
                          if ((ret = ca_proplist_setf(p, CA_PROP_WINDOW_X11_SCREEN, "%i", gdk_screen_get_number(screen))) < 0)
                                  return ret;
 @@ -285,7 +301,7 @@ int ca_gtk_proplist_set_for_widget(ca_proplist *p, GtkWidget *widget) {
@@ -116,7 +116,8 @@ index 34446f5..47285f8 100644
 -
 +#endif
                  /* FIXME, this might cause a round trip */
-
+ 
                  if (dw) {
---
+-- 
 2.34.1
+
