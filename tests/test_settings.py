@@ -122,7 +122,7 @@ class TestGlobalSettings(common.TestCase):
                              "     where you live\n"
                              "option-f=rgba(51,102,255,0.4)")
 
-        with mock.patch("pitivi.settings.xdg_config_home") as xdg_config_home,\
+        with mock.patch("pitivi.settings.xdg_config_home") as xdg_config_home, \
                 tempfile.TemporaryDirectory() as temp_dir:
             with open(os.path.join(temp_dir, "pitivi.conf"), "w", encoding="UTF-8") as tmp_file:
                 tmp_file.write(conf_file_content)
@@ -150,7 +150,7 @@ class TestGlobalSettings(common.TestCase):
                                          section="section-new", key="option-b",
                                          default=["foo"])
 
-        with mock.patch("pitivi.settings.xdg_config_home") as xdg_config_home,\
+        with mock.patch("pitivi.settings.xdg_config_home") as xdg_config_home, \
                 tempfile.TemporaryDirectory() as temp_dir:
             xdg_config_home.return_value = temp_dir
             settings1 = GlobalSettings()

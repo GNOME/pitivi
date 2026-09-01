@@ -563,7 +563,6 @@ class Pipeline(GES.Pipeline, SimplePipeline):
                 watchdog.props.timeout = WATCHDOG_TIMEOUT * 1000
                 self.props.audio_filter = watchdog
 
-
     def set_mode(self, mode):
         self._next_seek = None
         return GES.Pipeline.set_mode(self, mode)

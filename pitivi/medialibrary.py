@@ -388,8 +388,8 @@ class AssetThumbnail(GObject.Object, Loggable):
         quoted_uri = quote_uri(real_uri)
         thumbnail_hash = md5(quoted_uri.encode()).hexdigest()
         thumb_dir = os.path.join(GLib.get_user_cache_dir(), "thumbnails")
-        return os.path.join(thumb_dir, "normal", thumbnail_hash + ".png"),\
-            os.path.join(thumb_dir, "large", thumbnail_hash + ".png")
+        return (os.path.join(thumb_dir, "normal", thumbnail_hash + ".png"),
+                os.path.join(thumb_dir, "large", thumbnail_hash + ".png"))
 
     @classmethod
     def get_thumbnails_from_xdg_cache(cls, real_uri):

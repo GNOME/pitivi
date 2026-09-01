@@ -59,7 +59,7 @@ class TestShortcutsManager(common.TestCase):
     def test_add_shortcut(self):
         """Checks the number of calls to set_accels_for_action."""
         app = mock.MagicMock()
-        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home,\
+        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home, \
                 tempfile.TemporaryDirectory() as temp_dir:
             xdg_config_home.return_value = temp_dir
             manager = ShortcutsManager(app)
@@ -89,7 +89,7 @@ class TestShortcutsManager(common.TestCase):
     def test_load_save(self):
         """Checks saved shortcuts are loaded by a new instance."""
         app = mock.MagicMock()
-        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home,\
+        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home, \
                 tempfile.TemporaryDirectory() as temp_dir:
             xdg_config_home.return_value = temp_dir
             manager = ShortcutsManager(app)
@@ -119,8 +119,8 @@ class TestShortcutsManager(common.TestCase):
     def test_reset_accels(self):
         """Checks if accelerators have been reset to the default settings."""
         app = mock.MagicMock()
-        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home,\
-                tempfile.TemporaryDirectory() as temp_dir,\
+        with mock.patch("pitivi.shortcuts.xdg_config_home") as xdg_config_home, \
+                tempfile.TemporaryDirectory() as temp_dir, \
                 mock.patch("os.remove") as os_remove_mock:
             xdg_config_home.return_value = temp_dir
             manager = ShortcutsManager(app)

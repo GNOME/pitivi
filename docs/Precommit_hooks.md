@@ -22,9 +22,10 @@ Sooner or later you'll want to update the `pre-commit` framework and its hooks.
 
 ## How to update the `pre-commit` tool
 
-The `pre-commit` tool is installed in the flatpak sandbox through
-[python3-pre-commit.json](https://gitlab.gnome.org/GNOME/pitivi/-/blob/master/build/flatpak/python3-pre-commit.json).
-The `python3-pre-commit.json` file is generated with `flatpak-pip-generator`.
+The `pre-commit` tool is installed in the flatpak sandbox through the
+architecture-specific `python3-pre-commit.json` files in
+[`build/flatpak`](https://gitlab.gnome.org/GNOME/pitivi/-/tree/master/build/flatpak).
+They are generated with `flatpak-pip-generator`.
 See the instructions for [updating the Python
 dependencies](Updating_Python_dependencies.md).
 
@@ -64,7 +65,9 @@ To run the `check-yaml` hook on the entire codebase:
 (ptv-flatpak) $ ptvenv pre-commit run -a check-yaml
 ```
 
-If you feel brave, you can use `pre-commit` itself to update the hooks:
+If you feel brave, you can use `pre-commit` itself to update the hooks. Run it
+from the host shell after sourcing `bin/pitivi-env`; `ptvenv` is an alias and
+is not available inside a raw SDK shell.
 
 ```
 (ptv-flatpak) $ ptvenv pre-commit autoupdate

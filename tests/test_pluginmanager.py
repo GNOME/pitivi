@@ -42,8 +42,8 @@ class TestPluginManager(common.TestCase):
                 GObject.Object.__init__(self)
                 self.settings = GlobalSettings()
 
-        with mock.patch("pitivi.pluginmanager.get_plugins_dir") as get_plugins_dir,\
-                mock.patch("pitivi.pluginmanager.get_user_plugins_dir") as get_user_plugins_dir,\
+        with mock.patch("pitivi.pluginmanager.get_plugins_dir") as get_plugins_dir, \
+                mock.patch("pitivi.pluginmanager.get_user_plugins_dir") as get_user_plugins_dir, \
                 tempfile.TemporaryDirectory() as temp_dir:
 
             plugin_content = ("[Plugin]\n"

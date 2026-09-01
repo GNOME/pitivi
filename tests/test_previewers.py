@@ -261,7 +261,7 @@ class TestThumbnailCache(BaseTestMediaLibrary):
         """Checks the `get` method returns the same thing for asset and URI."""
         with self.assertRaises(ValueError):
             ThumbnailCache.get(1)
-        with mock.patch("pitivi.timeline.previewers.xdg_cache_home") as xdg_config_home,\
+        with mock.patch("pitivi.timeline.previewers.xdg_cache_home") as xdg_config_home, \
                 tempfile.TemporaryDirectory() as temp_dir:
             xdg_config_home.return_value = temp_dir
             sample_uri = common.get_sample_uri("1sec_simpsons_trailer.mp4")

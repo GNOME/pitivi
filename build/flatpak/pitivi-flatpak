@@ -488,16 +488,16 @@ class SandboxManager:
         sdk_branch = manifest["runtime-version"]
         freedesktop_branch = get_freedesktop_branch(sdk_branch)
         self.packs = [
-        FlatpakPackage(
-            "org.gnome.Platform", sdk_branch, self.sdk_repo, ARCH),
-        FlatpakPackage(
-            "org.gnome.Platform.Locale", sdk_branch, self.sdk_repo, ARCH),
-        FlatpakPackage(
-            "org.gnome.Sdk", sdk_branch, self.sdk_repo, ARCH),
-        FlatpakPackage(
-            "org.freedesktop.Sdk.Extension.rust-stable", freedesktop_branch, self.sdk_repo, ARCH),
-        FlatpakPackage(
-            "org.freedesktop.Sdk.Extension.llvm21", freedesktop_branch, self.sdk_repo, ARCH)]
+            FlatpakPackage(
+                "org.gnome.Platform", sdk_branch, self.sdk_repo, ARCH),
+            FlatpakPackage(
+                "org.gnome.Platform.Locale", sdk_branch, self.sdk_repo, ARCH),
+            FlatpakPackage(
+                "org.gnome.Sdk", sdk_branch, self.sdk_repo, ARCH),
+            FlatpakPackage(
+                "org.freedesktop.Sdk.Extension.rust-stable", freedesktop_branch, self.sdk_repo, ARCH),
+            FlatpakPackage(
+                "org.freedesktop.Sdk.Extension.llvm21", freedesktop_branch, self.sdk_repo, ARCH)]
 
         if self.coredumpgdb is None and "--coredumpgdb" in sys.argv or "-gdb" in sys.argv:
             self.coredumpgdb = ""
