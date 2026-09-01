@@ -20,22 +20,19 @@ To update the flatpak runtime version, look in `org.pitivi.Pitivi.json` for the
 current version:
 
 ```
-    "runtime-version": "43",
+    "runtime-version": "50",
 ```
 
 Check out what is the latest flatpak runtime version. For example:
 
 ```
-$ flatpak remote-ls flathub --system | grep org.gnome.Platform
-GNOME Application Platform version 3.38 org.gnome.Platform              3.38
-GNOME Application Platform version 46   org.gnome.Platform              46
-GNOME Application Platform version 47   org.gnome.Platform              47
+$ flatpak remote-ls --user flathub | grep org.gnome.Platform
 ```
 
-Download the latest:
+Install both the runtime used by the manifest and its SDK. For this update:
 
 ```
-$ flatpak install org.gnome.Sdk/x86_64/47
+$ flatpak --user install flathub org.gnome.Platform//50 org.gnome.Sdk//50
 ```
 
 Check out in the git history how we updated the runtime version in the past and
@@ -48,56 +45,72 @@ Some of them can be updated automatically with
 [flatpak-external-data-checker](https://github.com/flathub/flatpak-external-data-checker):
 
 ```
-$ flatpak run --filesystem=$HOME/dev/pitivi/pitivi org.flathub.flatpak-external-data-checker build/flatpak/org.pitivi.Pitivi.json --update --edit-only
+$ flatpak --user install flathub org.flathub.flatpak-external-data-checker
+$ flatpak run --user --filesystem="$(pwd)" org.flathub.flatpak-external-data-checker build/flatpak/org.pitivi.Pitivi.json --update --edit-only
 ```
 
-Create a commit with the automatically changed deps.
+The checker can update the manifest even if one of its checks fails. Treat any
+`Failed to check` message as an error: inspect the diff, fix the affected
+`x-checker-data`, then run the command again before committing the result.
+Stage only the files that belong to this update; do not use `git commit -a`,
+which can include unrelated local changes.
 
 ```
-$ git commit -a -m "build: Update deps with flatpak-external-data-checker"
+$ git add build/flatpak/org.pitivi.Pitivi.json
+$ git commit -m "build: Update deps with flatpak-external-data-checker"
 ```
+
+`x265` is intentionally pinned to 3.6 because x265 4 changes an API used by
+the GStreamer version built by this sandbox. Do not re-add an automatic
+checker for it until that compatibility issue is resolved.
 
 Other deps have to be checked and updated manually.
 
 ## Update gst-plugins-rs
 
-Follow the [official integration steps](https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/README.md?ref_type=heads#flatpak-integration). 
+Follow the [official integration steps](https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/README.md?ref_type=heads#flatpak-integration).
 
 To generate the list of dependencies, prepare a Python venv:
 
 ```
-$ python3 -m venv /tmp/venv
-$ /tmp/venv/bin/pip install aiohttp tomlkit
+$ python3 -m venv /tmp/pitivi-cargo-venv
+$ /tmp/pitivi-cargo-venv/bin/pip install aiohttp tomlkit
+$ git clone --depth=1 https://github.com/aleb/flatpak-builder-tools.git /tmp/pitivi-flatpak-builder-tools
 ```
 
 .. and use it to run flatpak-cargo-generator, as per the official integration steps:
 
 ```
-$ cd /tmp
-$ wget --user-agent="Firefox" https://crates.io/api/v1/crates/gst-plugin-gtk4/0.15.2/download -O crate.tar.gz
-$ tar xzvf crate.tar.gz
-$ /tmp/venv/bin/python3 /.../flatpak-builder-tools/cargo/flatpak-cargo-generator.py gst-plugin-gtk4-0.15.2/Cargo.lock -o gst-plugin-gtk4-sources.json
-$ mv gst-plugin-gtk4-sources.json ~/dev/pitivi/pitivi/build/flatpak/
+$ curl --fail --location --output /tmp/gst-plugin-gtk4.tar.gz https://static.crates.io/crates/gst-plugin-gtk4/gst-plugin-gtk4-0.15.2.crate
+$ tar -xzf /tmp/gst-plugin-gtk4.tar.gz -C /tmp
+$ /tmp/pitivi-cargo-venv/bin/python3 /tmp/pitivi-flatpak-builder-tools/cargo/flatpak-cargo-generator.py /tmp/gst-plugin-gtk4-0.15.2/Cargo.lock -o build/flatpak/gst-plugin-gtk4-sources.json
 ```
+
+Replace `0.15.2` with the version selected in the `gst-plugins-rs` module of
+the manifest. The generated file is already written to the correct location.
 
 Finally, check what optimizations you can enable. For example for Gtk version 4.14.4 we can enable the `gtk_v4_14` feature in the `cargo cinstall --features=...` line. To get the version of the Gtk library in the Sdk run:
 
 ```
-(ptv-flatpak) $ ptvenv python3 -c "from gi.repository import Gtk; print('{}.{}.{}'.format(Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION))"
-4.14.4
+$ . bin/pitivi-env
+(ptv-flatpak) $ ptvenv python3 -c "import gi; gi.require_version('Gtk', '4.0'); from gi.repository import Gtk; print(f'{Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION}')"
+4.22.4
 ```
+
+Run `ptvenv` in the host shell after sourcing `bin/pitivi-env`. It is an alias
+defined by that script, so it is intentionally not available from a raw
+`flatpak run --command=bash` shell.
 
 ## Check the Python version
 
 Check the Python version in the sandbox. For example, last time it was:
 
 ```
-$ flatpak run --user --command=bash --devel org.gnome.Sdk/x86_64/47
-[📦 org.gnome.Sdk ~]$ python --version
-Python 3.12.9
+$ flatpak run --user --command=python3 org.gnome.Sdk//50 --version
+Python 3.13.x
 ```
 
-When the Python version changes, update the `/app/lib/python3.12` occurrences
+When the Python version changes, update the `/app/lib/python3.13` occurrences
 in the [flatpak
 manifest](https://gitlab.gnome.org/GNOME/pitivi/blob/master/build/flatpak/org.pitivi.Pitivi.json)
 and also update the [Python dependencies](Updating_Python_dependencies.md).
@@ -128,7 +141,11 @@ Run the tests:
 
 ```
 (ptv-flatpak) $ ptvtests
+(ptv-flatpak) $ pitivi
 ```
+
+These commands require a graphical session; in a headless shell they can fail
+with `Gdk-WARNING **: cannot open display`.
 
 If all goes well, push the branch to origin to be able to initiate the
 generation of the CI image.
