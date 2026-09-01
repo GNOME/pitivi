@@ -25,7 +25,11 @@ makes it easier to use source packages we should switch back.
 
 ## Updating the Python deps
 
-To update the Python deps, all you have to do is to run:
+Run the commands from the root of the checkout. `update_deps.py` updates only
+the architecture of the host on which it is run. Repeat the process on each
+supported architecture. Alternatively, ask somebody else to do it and create a
+separate commit.
+
 ```
 $ . bin/pitivi-env
 (ptv-flatpak) $ build/flatpak/update_deps.py

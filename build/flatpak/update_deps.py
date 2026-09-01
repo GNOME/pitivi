@@ -76,7 +76,7 @@ def update_pre_commit_framework(venv_python, flatpak_pip_generator, arch, sdk):
     """Update the pre-commit framework."""
     print("Updating pre-commit framework...")
     run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} pre-commit", cwd=f"{os.getcwd()}/{arch}")
-    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} setuptools-scm 'pylint<=2.13.5'", cwd=f"{os.getcwd()}/{arch}")
+    run_command(f"{venv_python} ../{flatpak_pip_generator} --runtime org.gnome.Sdk//{sdk} setuptools-scm pylint", cwd=f"{os.getcwd()}/{arch}")
 
 
 def get_system_arch():
