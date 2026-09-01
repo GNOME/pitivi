@@ -238,8 +238,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://github.com/dyne/frei0r/archive/v2.5.1.tar.gz",
-                    "sha256": "318ec4a3042c94a00a58fccdc1eb0d911f36a22beb3504d27aefcca4598f40b0",
+                    "url": "https://github.com/dyne/frei0r/archive/v3.5.0.tar.gz",
+                    "sha256": "41cc8afa4991f5499cea0973be974469dcee377e67dbfbf6ca76e82b2b9bf22e",
                     "x-checker-data": {
                         "type": "anitya",
                         "project-id": 10670,
@@ -299,18 +299,14 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://bitbucket.org/multicoreware/x265_git/downloads/x265_3.6.tar.gz",
-                    "sha256": "663531f341c5389f460d730e62e10a4fcca3428ca2ca109693867bc5fe2e2807",
+                    "url": "https://github.com/Multicorewareinc/x265/releases/download/4.3/x265_4.3.tar.gz",
+                    "sha256": "83c53e4c8bbb8f1e33ed59e10a7d621d1d7801ca853910c3eb41f038b8ffb121",
                     "x-checker-data": {
                         "type": "html",
-                        "url": "https://bitbucket.org/multicoreware/x265_git/raw/stable/x265Version.txt",
+                        "url": "https://raw.githubusercontent.com/Multicorewareinc/x265/refs/heads/master/x265Version.txt",
                         "version-pattern": "releasetag: ([\\d\\.-]*)$",
-                        "url-template": "https://bitbucket.org/multicoreware/x265_git/downloads/x265_$version.tar.gz"
+                        "url-template": "https://github.com/Multicorewareinc/x265/releases/download/$version/x265_$version.tar.gz"
                     }
-                },
-                {
-                    "type": "patch",
-                    "path": "patches/x265-cmake.patch"
                 }
             ]
         },
