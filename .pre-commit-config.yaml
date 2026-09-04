@@ -7,8 +7,22 @@ repos:
       - id: check-yaml
       # Hooks able to fix small things.
       - id: trailing-whitespace
+        exclude: |
+          (?x)
+          .patch$|
       - id: end-of-file-fixer
-        exclude: ".svg$|.patch$|.po$"
+        exclude: |
+          (?x)
+          .svg$|
+          .patch$|
+          .po$|
+          ^(
+            build/flatpak/aarch64|
+            build/flatpak/gst-plugin-gtk4-sources.json|
+            build/flatpak/libcanberra|
+            build/flatpak/patches/|
+            build/flatpak/x86_64
+          )
       - id: fix-encoding-pragma
       # Hooks doing lightweight Python checks.
       - id: check-docstring-first
@@ -54,8 +68,9 @@ repos:
         entry: python3 -m pylint.__main__ --rcfile=pylint.rc -j1
         language: system
         types: [python]
-        exclude: >
-          (?x)^(
+        exclude: |
+          (?x)
+          ^(
             tests/validate-tests/manager.py|
             bin/pitivi.in
           )$
