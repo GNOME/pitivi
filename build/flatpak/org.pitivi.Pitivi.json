@@ -253,13 +253,13 @@
             "name": "soundtouch",
             "sources": [
                 {
-                    "type": "git",
-                    "url": "https://codeberg.org/soundtouch/soundtouch",
-                    "tag": "2.4.1",
-                    "commit": "0047e0b1ecfceb041348579119bf79b73a322a3a",
+                    "type": "archive",
+                    "url": "https://codeberg.org/soundtouch/soundtouch/archive/2.4.1.tar.gz",
+                    "sha256": "35d404e6e8c2ebd12fb4000da6fadd75c99e37eed2126a04721828c11c0377ec",
                     "x-checker-data": {
-                        "type": "git",
-                        "tag-pattern": "^([\\d.]+)$"
+                        "type": "anitya",
+                        "project-id": 115722,
+                        "url-template": "https://codeberg.org/soundtouch/soundtouch/archive/$version.tar.gz"
                     }
                 }
             ]
