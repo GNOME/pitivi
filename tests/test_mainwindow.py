@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
 """Tests for the mainwindow module."""
-# pylint: disable=no-self-use,protected-access
+# pylint: disable=protected-access
 from unittest import mock
 
 from pitivi.application import Pitivi

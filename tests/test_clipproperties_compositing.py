@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
 """Tests for the pitivi.clipproperties module."""
-# pylint: disable=protected-access,no-self-use,import-outside-toplevel,no-member
+# pylint: disable=protected-access,import-outside-toplevel,no-member
 from gi.repository import Gst
 
 from tests import common

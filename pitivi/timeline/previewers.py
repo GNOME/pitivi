@@ -480,7 +480,7 @@ class ImagePreviewer(Gtk.Layout, Previewer, Zoomable, Loggable):
             pixbuf.fill(rgba)
             return pixbuf
 
-        raise Exception("Unsupported ges_source type: %s" % type(self.ges_elem))
+        raise NotImplementedError("Unsupported ges_source type: %s" % type(self.ges_elem))
 
     def _update_thumbnails(self):
         """Updates the thumbnail widgets for the clip at the current zoom."""
@@ -790,7 +790,6 @@ class AssetPreviewer(Previewer, Loggable):
     def __preroll_timed_out_cb(self):
         self.stop_generation()
 
-    # pylint: disable=no-self-use
     def _autoplug_select_cb(self, unused_decode, unused_pad, unused_caps, factory):
         # Don't plug audio decoders / parsers.
         if "Audio" in factory.get_klass():
@@ -1287,7 +1286,6 @@ class AudioPreviewer(Gtk.Layout, Previewer, Zoomable, Loggable):
                 self.error("Aborting due to waveforms generation issue: %s",
                            message.parse_error())
 
-    # pylint: disable=no-self-use
     def _autoplug_select_cb(self, unused_decode, unused_pad, unused_caps, factory):
         # Don't plug video decoders / parsers.
         if "Video" in factory.get_klass():

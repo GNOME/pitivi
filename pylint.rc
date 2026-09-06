@@ -19,11 +19,6 @@ load-plugins=
 # Pickle collected data for later comparisons.
 persistent=no
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
-
-
 [MESSAGES CONTROL]
 
 # Disable the message, report, category or checker with the given id(s). You
@@ -45,13 +40,13 @@ disable=access-member-before-definition,
         import-outside-toplevel,
         no-else-return, # Looks better in some cases.
         no-member,
-        no-self-use, # We love self.
         not-an-iterable,
         possibly-unused-variable,
         similarities, # It's expensive and not very useful.
         too-few-public-methods,
         too-many-ancestors,
         too-many-arguments,
+        too-many-positional-arguments,
         too-many-boolean-expressions,
         too-many-branches,
         too-many-instance-attributes,
@@ -140,9 +135,6 @@ function-rgx=[a-z_][a-z0-9_]{2,30}$
 # Regular expression which should only match correct method names
 method-rgx=[a-z_][a-z0-9_]{2,50}$|__[a-z_]{2,100}|test_[a-z_]{2,100}$|do$
 
-# Naming hint for method names
-method-name-hint=[a-z_][a-z0-9_]{2,30}$
-
 # Regular expression which should only match correct instance attribute names
 attr-rgx=[a-z_][a-z0-9_]{2,30}$
 
@@ -163,10 +155,6 @@ good-names=x,y,z,i,j,k,e,w,h,_
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
 
-# List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,apply,input
-
-
 # checks for sign of poor/misdesign:
 # * number of methods, attributes, local variables...
 # * size, complexity of functions, methods
@@ -183,7 +171,7 @@ max-locals=15
 max-returns=6
 
 # Maximum number of branch for function / method body
-max-branchs=12
+max-branches=12
 
 # Maximum number of statements in function / method body
 max-statements=50

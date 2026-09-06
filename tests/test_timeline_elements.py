@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
 """Tests for the timeline.elements module."""
-# pylint: disable=protected-access,no-self-use
+# pylint: disable=protected-access
 from unittest import mock
 
 from gi.overrides import GObject
