@@ -125,6 +125,9 @@ class TimelineElementObserver(Loggable):
         if pspec.name in PROPS_TO_IGNORE:
             return
 
+        if pspec.owner_type.name == "GstFramePositioner" and pspec.name == "zorder":
+            return
+
         if ges_timeline_element.get_control_binding(prop_name):
             self.debug("Property %s controlled", prop_name)
             return
