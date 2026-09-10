@@ -1059,7 +1059,7 @@ class GstElementSettingsWidget(Gtk.Box, Loggable):
             if not prop.flags & GObject.ParamFlags.WRITABLE:
                 continue
             value = widget.get_widget_value()
-            if value is not None and (value != prop.default_value or with_default):
+            if value is not None and (value != self.__get_default_value(prop) or with_default):
                 values[prop.name] = value
         return values
 
@@ -1074,9 +1074,10 @@ class GstElementSettingsWidget(Gtk.Box, Loggable):
 
     def make_property_widget(self, prop, value=None):
         """Creates a widget for the specified element property."""
+        default_value = self.__get_default_value(prop)
         type_name = GObject.type_name(prop.value_type.fundamental)
         if type_name == "gchararray":
-            widget = TextWidget(default=prop.default_value)
+            widget = TextWidget(default=default_value)
         elif type_name in ['guint64', 'gint64', 'guint', 'gint', 'gfloat', 'gulong', 'gdouble']:
             maximum, minimum = None, None
             if hasattr(prop, "minimum"):
@@ -1084,28 +1085,39 @@ class GstElementSettingsWidget(Gtk.Box, Loggable):
             if hasattr(prop, "maximum"):
                 maximum = prop.maximum
             widget = NumericWidget(
-                default=prop.default_value, upper=maximum, lower=minimum)
+                default=default_value, upper=maximum, lower=minimum)
         elif type_name == "gboolean":
-            widget = ToggleWidget(default=prop.default_value)
+            widget = ToggleWidget(default=default_value)
         elif type_name == "GEnum":
-            choices = []
-            for unused_key, val in prop.enum_class.__enum_values__.items():
-                choices.append([val.value_name, int(val)])
-            widget = ChoiceWidget(choices, default=prop.default_value)
+            enum_values = getattr(prop.enum_class, "__enum_values__", {}).values()
+            choices = [[enum_value.value_name, int(enum_value)]
+                       for enum_value in enum_values]
+            if not choices:
+                choices = [[str(enum_value), enum_value]
+                           for enum_value in range(prop.enum_class.minimum,
+                                                   prop.enum_class.maximum + 1)]
+            widget = ChoiceWidget(choices, default=default_value)
         elif type_name == "GstFraction":
             widget = FractionWidget(
-                presets=["0:1"], default=prop.default_value)
+                presets=["0:1"], default=default_value)
         else:
             # TODO: implement widgets for: GBoxed, GFlags
             self.fixme("Unsupported property type: %s", type_name)
             widget = DefaultWidget()
 
         if value is None:
-            value = prop.default_value
+            value = default_value
         if value is not None:
             widget.set_widget_value(value)
 
         return widget
+
+    @staticmethod
+    def __get_default_value(prop):
+        """Gets a property's default value across PyGObject versions."""
+        if hasattr(prop, "get_default_value"):
+            return prop.get_default_value()
+        return prop.default_value
 
     def get_widget_of_prop(self, prop_name):
         for prop, value in self.properties.items():
