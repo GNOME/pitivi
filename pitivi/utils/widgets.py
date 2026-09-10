@@ -286,7 +286,7 @@ class NumericWidget(Gtk.Box, DynamicWidget):
             if self.spinner:
                 self.spinner.props.digits = 2
         else:
-            raise Exception('Unsupported property type: %s' % type_)
+            raise TypeError('Unsupported property type: %s' % type_)
         lower = min(self.adjustment.props.lower, value)
         upper = max(self.adjustment.props.upper, value)
         self.adjustment.configure(value, lower, upper, step, page, 0)
