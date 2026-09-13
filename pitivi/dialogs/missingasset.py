@@ -99,7 +99,9 @@ class MissingAssetDialog(Gtk.Dialog, Loggable):
     def __setup_file_chooser(uri, settings):
         chooser = Gtk.FileChooserWidget(action=Gtk.FileChooserAction.OPEN)
         chooser.set_select_multiple(False)
-        previewer = PreviewWidget(settings, discover_sync=True)
+        # The missing-uri handler runs synchronously while loading a project.
+        # Keep discovery asynchronous to avoid re-entering GES from its dialog.
+        previewer = PreviewWidget(settings)
         chooser.set_preview_widget(previewer)
         chooser.set_use_preview_label(False)
         chooser.connect("update-preview", previewer.update_preview_cb)
