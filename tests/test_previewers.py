@@ -203,7 +203,10 @@ class TestAudioPreviewer(TestPreviewers):
         with open(wavefile, "rb") as fsamples:
             samples = list(numpy.load(fsamples))
 
-        self.assertEqual(samples, SIMPSON_WAVFORM_VALUES)
+        # The level element's floating-point results can differ slightly
+        # between GStreamer versions.
+        numpy.testing.assert_allclose(samples, SIMPSON_WAVFORM_VALUES,
+                                      rtol=2e-7, atol=1e-12)
 
     @common.setup_timeline
     def test_waveform_offset(self):
