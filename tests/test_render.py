@@ -19,6 +19,7 @@
 import os
 import shutil
 import tempfile
+from functools import wraps
 from unittest import mock
 from unittest import skipUnless
 
@@ -77,6 +78,23 @@ def setup_render_presets(*profiles):
         return wrapped
 
     return setup_wrapper
+
+
+def prefer_x264enc(func):
+    """Ensures render tests don't select a local hardware H.264 encoder."""
+    @wraps(func)
+    def wrapped(self):
+        x264_factory = Gst.ElementFactory.find("x264enc")
+        if x264_factory:
+            original_rank = x264_factory.get_rank()
+            x264_factory.set_rank(Gst.Rank.PRIMARY + 100)
+        try:
+            func(self)
+        finally:
+            if x264_factory:
+                x264_factory.set_rank(original_rank)
+
+    return wrapped
 
 
 class TestPresetsManager(common.TestCase):
@@ -345,6 +363,7 @@ class TestRender(BaseTestMediaLibrary):
             if message:
                 dialog._pipeline.get_bus().post(message)
 
+    @prefer_x264enc
     def test_rendering_with_scale(self):
         """Tests rendering with a smaller scale."""
         sample_name = "30fps_numeroted_frames_red.mkv"
@@ -526,6 +545,7 @@ class TestRender(BaseTestMediaLibrary):
         self.check_simple_rendering_profile()
 
     @skipUnless(*encoding_target_exists("youtube"))
+    @prefer_x264enc
     def test_setting_caps_fields_in_advanced_dialog(self):
         """Tests setting special advanced setting (which are actually set on caps)."""
         project = self.create_simple_project()
@@ -567,6 +587,7 @@ class TestRender(BaseTestMediaLibrary):
     @skipUnless(*encoding_target_exists("dvd"))
     @skipUnless(*encoding_target_exists("youtube"))
     @skipUnless(*factory_exists("pngenc"))
+    @prefer_x264enc
     def test_quality_widget(self):
         project = self.create_simple_project()
         dialog = self.create_rendering_dialog(project)
@@ -608,6 +629,7 @@ class TestRender(BaseTestMediaLibrary):
                                   preset="youtube",
                                   sensitive=True, value=Quality.MEDIUM)
 
+    @prefer_x264enc
     def test_preset_persistent(self):
         """Checks the render preset is remembered when loading a project."""
         project = self.create_simple_project()
